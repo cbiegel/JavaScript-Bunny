@@ -1,0 +1,161 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+	<base target="_parent" />
+	<meta charset="utf-8" />
+	<title>Bunny Game</title>
+	<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+	<script type="text/javascript" src="jquery-2.1.4.js"></script>
+
+		
+ <script type="text/javascript">
+ 
+	$(document).ready(function() {
+		
+		var _currentHeight = 0;
+		function Vector2(_x, _y) {
+		    this.x = _x;
+		    this.y = _y;
+			this.distance = function (v) {
+			        a = v.x-this.x;
+					b = v.y-this.y;
+					return Math.sqrt(a*a+b*b);
+			    }
+		}
+		
+		var canvas=$("#canv");
+		// var canvas = document.getElementById("canv");
+		var _height = 400; 
+		var _width = 400;
+		
+		// 0, 0 is top left corner in canvas coordinates
+		// it's easier if 0,0 is in bottom left and y goes up
+		// also need some kind of scene coordinates for scrolling camera
+		
+		canvas.height(_height);
+		canvas.width(_width);
+		canvas[0].height=_height;
+		canvas[0].width=_width;	
+		var ctx = $("#canv")[0].getContext("2d");
+		
+		//ctx.strokeStyle="#00aa00";
+				
+		var _mousePos = new Vector2(0,0);
+		
+		var _targets =[]; //gotta keep track of targets
+		var _targetCount = 4; //how many targets should be kept track of at a time..
+		var _targetHeightDifference = 60; // difference between targets
+		var _currentTargetHeight = _targetHeightDifference;	// current camera height
+		
+		var _eps = 5; // epsilon
+		var _points = 0; //points should count up..
+		
+		// TEST
+		var testX = _width/2;
+		var testY = _height-30;
+		var testDX = 2;
+		var testDY = -2;
+		
+		console.log($("#canv").width);
+		console.log(testY);
+
+		var _gameover = false;
+
+		///////
+		// helpers
+		function aboutEquals(a,b,epsilon)
+		{
+			if(Math.abs(a-b)<epsilon)
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		function lerp(a,b,factor)
+		{			
+			return a + factor *( b - a);;
+		}
+		function lerpPos(posA,posB,factor)
+		{
+			c[0]= lerp(a[0], b[0], factor);
+			c[1]= lerp(a[1], b[1], factor);
+			return new Vector2(lerp(a.x, b.x, factor),lerp(a.y, b.y, factor));
+		}
+		function clamp(floatA,floatMin,floatMax)
+		{
+			return Math.max(Math.min(floatA,floatMax),floatMin);
+		}
+		function clampPos(pos,floatMinX,floatMinY,floatMaxX,floatMaxY)
+		{
+			return new Vector2(clamp(pos.x,floatMinX,floatMaxX),clamp(pos.y,floatMinY,floatMaxY));
+		}
+		function CanvasToScene(a,b)
+		{
+		    return new Vector2(a,_height-b+_currentHeight);
+		}
+		function SceneToCanvas(vector)
+		{
+		    return [vector.x,_height-(vector.y-_currentHeight)];
+		}
+		function randomRange(from,to)
+		{
+			a = Math.min(from,to);
+			b = Math.max(from,to);
+			return Math.floor((Math.random() * b) + a);
+		}
+		function getMousePos(canvas, evt) {
+		    var rect = canvas.getBoundingClientRect();
+			
+		    return CanvasToScene(evt.clientX - rect.left,evt.clientY - rect.top);
+		}
+		// end helper functions
+			
+		function loop()
+		{
+			// implement game loop here
+			ctx.clearRect(0, 0, _width, _height);
+			drawBall();
+			testX += testDX;
+			testY += testDY;
+		}
+		function drawBall() {
+			ctx.beginPath();
+			ctx.arc(testX, testY, 10, 0, Math.PI*2);
+			ctx.fillStyle = "#0095DD";
+			ctx.fill();
+			ctx.closePath();
+		}
+		function setup()
+		{
+			
+			// input
+			canvas[0].addEventListener('mousemove', function(evt) {
+				//mouse move logic
+			}, false);
+			canvas[0].addEventListener('mousedown', function(evt) {
+				//jump logic		
+			}, false);
+		}
+		function debugLoop()
+		{
+			console.log("testX: " + testX);
+			console.log("testY: " + testY);
+			console.log("height: " + _height);
+		}
+		setup();
+		setInterval(loop, 10);//makes the loop happen
+		// setInterval(debugLoop, 1000);
+				
+		
+	});
+	
+	
+ </script>
+</head>
+<body>
+<canvas id="canv" width="400" height="400"></canvas>
+</body>
+</html>

@@ -62,6 +62,7 @@
 		var _targetHeightDifference = 60; // difference between targets
 		var _currentTargetHeight = _targetHeightDifference + _ground;	// current camera height
 		var _currentTargetWidth = _width/2;
+		var _targetXOffset = 25;
 		
 		var _eps = 10; // epsilon
 		var _points = 0; //points should count up..
@@ -118,7 +119,7 @@
 		{
 			a = Math.min(from,to);
 			b = Math.max(from,to);
-			return Math.floor((Math.random() * b) + a);
+			return Math.floor(Math.random()*(b-a+1)+a);
 		}
 		
 		function randomSign() {
@@ -204,7 +205,7 @@
 		
 		function drawTargets() {
 			if(_targets.length < _targetCount) {
-				var targetX = _currentTargetWidth + randomRange(30, 80) * randomSign();
+				var targetX = randomRange(_targetXOffset, _width - _targetXOffset);
 				var pos = new Vector2(targetX, _currentTargetHeight);
 				var newPos = clampPos(pos,0,_currentTargetHeight,_width,_currentTargetHeight);
 				

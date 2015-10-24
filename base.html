@@ -1,10 +1,13 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
 	<base target="_parent" />
 	<meta charset="utf-8" />
 	<title>Bunny Game</title>
 	<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+  <style>
+  body { background-color: #ccc; text-align: center; }
+  </style>
 	<script type="text/javascript" src="jquery-2.1.4.js"></script>
 
 		
@@ -37,8 +40,8 @@
 		canvas[0].height=_height;
 		canvas[0].width=_width;	
 		var ctx = $("#canv")[0].getContext("2d");
-		
-		//ctx.strokeStyle="#00aa00";
+		// lines around shapes
+		ctx.strokeStyle='#00aa00';
 				
 		var _mousePos = new Vector2(0,0);
 		
@@ -46,23 +49,22 @@
 		var _targetCount = 4; //how many targets should be kept track of at a time..
 		var _targetHeightDifference = 60; // difference between targets
 		var _currentTargetHeight = _targetHeightDifference;	// current camera height
+		var _currentTargetWidth = _width/2;
 		
 		var _eps = 5; // epsilon
 		var _points = 0; //points should count up..
+		var _gravity = 0.035;
 		
 		// TEST
-		var testX = _width/2;
-		var testY = _height-30;
-		var testDX = 2;
-		var testDY = -2;
+		var _playerX = _width/2;
+		var _playerY = _height-30;
+		var _playerXUpdate = 0;
+		var _playerYUpdate = 0;
 		
-		console.log($("#canv").width);
-		console.log(testY);
-
 		var _gameover = false;
-
-		///////
-		// helpers
+		/////////////
+		// helpers //
+		/////////////
 		function aboutEquals(a,b,epsilon)
 		{
 			if(Math.abs(a-b)<epsilon)
@@ -78,7 +80,7 @@
 		{			
 			return a + factor *( b - a);;
 		}
-		function lerpPos(posA,posB,factor)
+		function lerpPos(a,b,factor)
 		{
 			c[0]= lerp(a[0], b[0], factor);
 			c[1]= lerp(a[1], b[1], factor);
@@ -106,6 +108,11 @@
 			b = Math.max(from,to);
 			return Math.floor((Math.random() * b) + a);
 		}
+    
+		function randomSign() {
+			return Math.random() < 0.5 ? -1 : 1;
+		}
+    
 		function getMousePos(canvas, evt) {
 		    var rect = canvas.getBoundingClientRect();
 			
@@ -116,40 +123,97 @@
 		function loop()
 		{
 			// implement game loop here
-			ctx.clearRect(0, 0, _width, _height);
+			clearCanvas();
+			checkCollision();
 			drawBall();
-			testX += testDX;
-			testY += testDY;
+			drawTargets();
+			_playerX = _mousePos.x;//+= _playerXUpdate;
+      
+			_playerYUpdate += _gravity;
+			_playerY += _playerYUpdate;
+			if(_playerY > _height-30) { _playerY = _height-30; }
+			}
+    
+		function clearCanvas() {
+			//ctx.clearRect(0, 0, _width, _height);
+			// set background color
+			ctx.fillStyle = '#cc4422';
+			ctx.fillRect(0, 0, _height, _width);
 		}
+    
+		function checkCollision() {
+			var ball = new Vector2(_playerX, _playerY);
+			_targets.forEach(function(trg) {
+				if(aboutEquals(ball.x, trg.x, _eps*2) && aboutEquals(ball.y, trg.y, _eps*2)) {
+					_playerYUpdate = -3;
+					destroyTarget(trg);
+				}
+			});
+		}
+    
+		function destroyTarget(target) {
+			var index = _targets.indexOf(target);
+			if(index > -1) {
+				_targets.splice(index,1);
+			}
+		}
+    
 		function drawBall() {
 			ctx.beginPath();
-			ctx.arc(testX, testY, 10, 0, Math.PI*2);
-			ctx.fillStyle = "#0095DD";
+			ctx.arc(_playerX, _playerY, 10, 0, Math.PI*2);
+			ctx.fillStyle = "#dd9500";
 			ctx.fill();
 			ctx.closePath();
 		}
+    
+		function drawTargets() {
+      
+			if(_targets.length < _targetCount) {
+				_currentTargetWidth += randomRange(30, 80) * randomSign();
+				if(_currentTargetWidth < 0) _currentTargetWidth = 0;
+				else if(_currentTargetWidth > _width) _currentTargetWidth = _width;
+				_targets.push(new Vector2(_currentTargetWidth, _currentTargetHeight));
+        
+				console.log("target: "+_currentTargetWidth+", "+_currentTargetHeight);
+				_currentTargetHeight -= _targetHeightDifference;
+			}
+      
+			_targets.forEach(function(trg) {
+				drawTarget(trg);
+			});
+		}
+    
+		function drawTarget(position) {
+			ctx.beginPath();
+			ctx.arc(position.x, position.y, 10, 0, Math.PI*2);
+			ctx.fillStyle = "#dddd00";
+			ctx.fill();
+			ctx.closePath();
+		}
+    
 		function setup()
 		{
+			_currentTargetHeight = 300;
 			
 			// input
 			canvas[0].addEventListener('mousemove', function(evt) {
 				//mouse move logic
+				_mousePos = getMousePos(document.getElementById('canv'), evt);
+				//console.log(_mousePos);
 			}, false);
+			
 			canvas[0].addEventListener('mousedown', function(evt) {
-				//jump logic		
+				//jump logic
+				if(/*_currentHeight*/ _playerY >= _height-30 && _points == 0) {
+					_playerYUpdate = -3;
+				}
 			}, false);
-		}
-		function debugLoop()
-		{
-			console.log("testX: " + testX);
-			console.log("testY: " + testY);
-			console.log("height: " + _height);
+			
 		}
 		setup();
+		// TODO statt setInterval: https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame
+		// mehr details: https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
 		setInterval(loop, 10);//makes the loop happen
-		// setInterval(debugLoop, 1000);
-				
-		
 	});
 	
 	

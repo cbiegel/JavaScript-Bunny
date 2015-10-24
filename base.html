@@ -14,7 +14,6 @@
 	<script type="text/javascript">
 	/*
 	TODOs:
-	- Verwendung von CanvasToScene und SceneToCanvas (statt dauerhaft mit x & y Koordinaten auf dem Canvas)
 	- statt setInterval: https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame (mehr details: https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/)
 	- siehe clampElementOnCanvas()
 	- gameover Funktionalität
@@ -23,13 +22,16 @@
 		
 		var _currentHeight = 0;
 		function Vector2(_x, _y) {
-				this.x = _x;
-				this.y = _y;
-			this.distance = function (v) {
-							a = v.x-this.x;
-					b = v.y-this.y;
-					return Math.sqrt(a*a+b*b);
-					}
+			this.x = _x;
+			this.y = _y;
+			this.distance = function(v) {
+				a = v.x-this.x;
+				b = v.y-this.y;
+				return Math.sqrt(a*a+b*b);
+			}
+			this.distanceY = function(v) {
+				return v.y-this.y;
+			}
 		}
 		
 		var canvas=$("#canv");
@@ -48,20 +50,22 @@
 		var ctx = $("#canv")[0].getContext("2d");
 		// lines around shapes
 		ctx.strokeStyle='#00aa00';
-				
+		
+		var _ground = 30; // y-position of ground
 		var _mousePos = new Vector2(0,0);
-		var _player = new Vector2(_width/2, _height-30);
+		var _player = new Vector2(_width/2, _ground);
 		var _dy = 0; // movement
 		
 		var _targets =[]; //gotta keep track of targets
-		var _lastTarget = new Vector2(0,600);
-		var _targetCount = 4; //how many targets should be kept track of at a time..
+		var _lastTarget = new Vector2(0,0);
+		var _targetCount = 5; //how many targets should be kept track of at a time..
 		var _targetHeightDifference = 60; // difference between targets
-		var _currentTargetHeight = _targetHeightDifference;	// current camera height
+		var _currentTargetHeight = _targetHeightDifference + _ground;	// current camera height
 		var _currentTargetWidth = _width/2;
 		
-		var _eps = 5; // epsilon
+		var _eps = 10; // epsilon
 		var _points = 0; //points should count up..
+		var _highscore = 0;
 		var _pointsForNextTarget = 10;
 		var _gravity = 0.035;
 
@@ -139,9 +143,9 @@
 			checkGameover();
 			_player.x = _mousePos.x;
 			
-			_dy += _gravity;
+			_dy -= _gravity;
 			_player.y += _dy;
-			if(_player.y > _height-30) { _player.y = _height-30; }
+			if(_player.y < _ground) { _player.y = _ground; }
 		}
 		
 		function clearCanvas() {
@@ -151,10 +155,9 @@
 		}
 		
 		function checkCollision() {
-			var player = new Vector2(_player.x, _player.y);
 			_targets.forEach(function(trg) {
-				if(aboutEquals(player.x, trg.x, _eps*2) && aboutEquals(player.y, trg.y, _eps*2)) {
-					_dy = -3;
+				if(aboutEquals(_player.x, trg.x, _eps) && aboutEquals(_player.y, trg.y, _eps)) {
+					_dy = 3;
 					_points += _pointsForNextTarget;
 					_pointsForNextTarget += 10;
 					_lastTarget = trg;
@@ -171,8 +174,9 @@
 		}
 		
 		function drawPlayer() {
+			var player = SceneToCanvas(_player);
 			ctx.beginPath();
-			ctx.arc(_player.x, _player.y, 10, 0, Math.PI*2);
+			ctx.arc(player[0], player[1], 10, 0, Math.PI*2);
 			ctx.fillStyle = "#dd9500";
 			ctx.fill();
 			ctx.closePath();
@@ -180,11 +184,14 @@
 		
 		function drawTargets() {
 			if(_targets.length < _targetCount) {
-				_currentTargetWidth += randomRange(30, 80) * randomSign();
-				if(_currentTargetWidth < 0) _currentTargetWidth = 0;
-				else if(_currentTargetWidth > _width) _currentTargetWidth = _width;
-				_targets.push(new Vector2(_currentTargetWidth, _currentTargetHeight));
-				_currentTargetHeight -= _targetHeightDifference;
+				var targetX = _currentTargetWidth + randomRange(30, 80) * randomSign();
+				var pos = new Vector2(targetX, _currentTargetHeight);
+				var newPos = clampPos(pos,0,_currentTargetHeight,_width,_currentTargetHeight);
+				
+				_targets.push(newPos);
+				
+				_currentTargetWidth = newPos.x;
+				_currentTargetHeight += _targetHeightDifference;
 			}
 			
 			_targets.forEach(function(trg) {
@@ -193,8 +200,9 @@
 		}
 		
 		function drawTarget(position) {
+			var pos = SceneToCanvas(position);
 			ctx.beginPath();
-			ctx.arc(position.x, position.y, 10, 0, Math.PI*2);
+			ctx.arc(pos[0], pos[1], 10, 0, Math.PI*2);
 			ctx.fillStyle = "#dddd00";
 			ctx.fill();
 			ctx.closePath();
@@ -213,8 +221,6 @@
 		
 		function setup()
 		{
-		_currentTargetHeight = 300;
-			
 			// input
 			canvas[0].addEventListener('mousemove', function(evt) {
 				//mouse move logic
@@ -222,8 +228,8 @@
 			}, false);
 			canvas[0].addEventListener('mousedown', function(evt) {
 				//jump logic
-				if(/*_currentHeight*/ _player.y >= _height-30 && _points == 0) {
-					_dy = -3;
+				if(_player.y == _ground && _points == 0) {
+					_dy = 3;
 				}
 			}, false);
 		}

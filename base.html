@@ -18,8 +18,13 @@
 	- statt setInterval: https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame (mehr details: https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/)
 	- siehe clampElementOnCanvas()
 	*/
+	/*
+	Quellen:
+	- bunny: iconfinder.com/icons/48564/bunny_easter_easter_eggs_rabbit_icon#size=22
+	- bell: iconfinder.com/icons/1227/alarm_bell_icon#size=22
+	*/
 	$(document).ready(function() {
-		
+		var _useImages = true; // toggle between images or circles
 		var _currentHeight = 0;
 		function Vector2(_x, _y) {
 			this.x = _x;
@@ -177,11 +182,19 @@
 		
 		function drawPlayer() {
 			var player = SceneToCanvas(_player);
-			ctx.beginPath();
-			ctx.arc(player[0], player[1], 10, 0, Math.PI*2);
-			ctx.fillStyle = "#dd9500";
-			ctx.fill();
-			ctx.closePath();
+			if(_useImages) {
+				var imgPlayer = new Image();
+				imgPlayer.src = 'bell.png';
+				var imgWidth = 22;
+				ctx.drawImage(imgPlayer, player[0] - imgWidth/2, player[1] - imgWidth/2);
+			}
+			else {
+				ctx.beginPath();
+				ctx.arc(player[0], player[1], 10, 0, Math.PI*2);
+				ctx.fillStyle = "#dd9500";
+				ctx.fill();
+				ctx.closePath();
+			}
 		}
 		
 		function drawTargets() {
@@ -203,11 +216,19 @@
 		
 		function drawTarget(position) {
 			var pos = SceneToCanvas(position);
-			ctx.beginPath();
-			ctx.arc(pos[0], pos[1], 10, 0, Math.PI*2);
-			ctx.fillStyle = "#dddd00";
-			ctx.fill();
-			ctx.closePath();
+			if(_useImages) {
+				var imgTarget = new Image();
+				imgTarget.src = 'bunny.png';
+				var imgWidth = 22;
+				ctx.drawImage(imgTarget, pos[0] - imgWidth/2, pos[1] - imgWidth/2);
+			}
+			else {
+				ctx.beginPath();
+				ctx.arc(pos[0], pos[1], 10, 0, Math.PI*2);
+				ctx.fillStyle = "#dddd00";
+				ctx.fill();
+				ctx.closePath();
+			}
 		}
 		
 		function drawPoints() {

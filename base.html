@@ -14,9 +14,9 @@
 	<script type="text/javascript">
 	/*
 	TODOs:
+	- Scrolling-Mechanismus
 	- statt setInterval: https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame (mehr details: https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/)
 	- siehe clampElementOnCanvas()
-	- gameover Funktionalität
 	*/
 	$(document).ready(function() {
 		
@@ -135,17 +135,19 @@
 		function loop()
 		{
 			// implement game loop here
-			clearCanvas();
-			checkCollision();
-			drawPlayer();
-			drawTargets();
-			drawPoints();
-			checkGameover();
-			_player.x = _mousePos.x;
-			
-			_dy -= _gravity;
-			_player.y += _dy;
-			if(_player.y < _ground) { _player.y = _ground; }
+			if(!_gameover) {
+				clearCanvas();
+				checkCollision();
+				drawPlayer();
+				drawTargets();
+				drawPoints();
+				checkGameover();
+				_player.x = _mousePos.x;
+				
+				_dy -= _gravity;
+				_player.y += _dy;
+				if(_player.y < _ground) { _player.y = _ground; }
+			}
 		}
 		
 		function clearCanvas() {
@@ -215,8 +217,38 @@
 		}
 		
 		function checkGameover() {
-			// TODO gameover Funktionalität
-			//console.log(_lastTarget.y +": "+((_lastTarget.y - _player.y) < -70));
+			if(_player.distanceY(_lastTarget) >= _targetHeightDifference) {
+				var newHighscore = false;
+				_gameover = true;
+				if(_points > _highscore) {
+					_highscore = _points;
+					newHighscore = true;
+				}
+				drawGameoverScreen(_points, newHighscore);
+				resetVars();
+			}
+		}
+		
+		function drawGameoverScreen(points, isNewHighscore) {
+			var txt = (isNewHighscore) ? "New Highscore!" : "";
+			ctx.fillStyle = "#dddddd";
+			ctx.font = "16px Arial";
+			ctx.textAlign="center";
+			ctx.fillText(txt,_width/2,_height/2-25);
+			ctx.fillText("Points: " + points,_width/2,_height/2);
+			ctx.fillText("Highscore: " + _highscore,_width/2,_height/2+25);
+			ctx.textAlign="left";
+		}
+		
+		function resetVars() {
+			_points = 0;
+			_dy = 0;
+			_player = new Vector2(_width/2, _ground);
+			_lastTarget = new Vector2(0,0);
+			_currentTargetHeight = _targetHeightDifference + _ground;	// current camera height
+			_currentTargetWidth = _width/2;
+			_targets = [];
+			_pointsForNextTarget = 10;
 		}
 		
 		function setup()
@@ -228,6 +260,7 @@
 			}, false);
 			canvas[0].addEventListener('mousedown', function(evt) {
 				//jump logic
+				_gameover = false;
 				if(_player.y == _ground && _points == 0) {
 					_dy = 3;
 				}
